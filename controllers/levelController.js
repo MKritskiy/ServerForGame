@@ -6,21 +6,22 @@ const { log } = require("console");
 const { where } = require("sequelize");
 const fs = require("fs");
 
-//TODO: при создании уровня производить проверку на присутствие у пользователя уровня
-// в случаи присутствия - перезаписывать, иначе создавать
 class LevelController {
   async create(req, res, next) {
     try {
       const {userId} = req.body;
       const { level_address } = req.files;
-      const level = await Level.findOne({ 
-        where: {userId: userId}
-        });
+      const level = await Level.findOne({
+        where: { userId: userId },
+      });
+      if (level?.level_address){
+        fs.unlinkSync(path.resolve(__dirname, "..", "static", level.level_address));
+      }
       let fileName = uuid.v4() + ".json";
+      level.setAttributes({level_address: fileName})
       level_address.mv(path.resolve(__dirname, "..", "static", fileName));
-
-     level.level_address = fileName;
-      res.json(level);
+      level.save()
+      return res.json(level);
     } catch (e) {
       next(ApiError.badRequest(e.message));
     }
@@ -37,12 +38,13 @@ class LevelController {
     let level;
     if (!id) {
       level = await Level.findAll();
-      return res.json(
-        level
-      );
+      return res.json(level);
     }
-    level = await Level.findOne({ where: { id } });
-    let fileText = await fs.readFileSync(path.resolve(__dirname, "..", "static", level.level_address), {encoding: 'utf8'})
+    level = await Level.findOne({ where: { id: id } });
+    let fileText = await fs.readFileSync(
+      path.resolve(__dirname, "..", "static", level.level_address),
+      { encoding: "utf8" }
+    );
     return res.json(fileText);
   }
 
@@ -53,7 +55,7 @@ class LevelController {
     let filePath = path.resolve(__dirname, "..", "static");
     if (id) {
       try {
-        //удаление одного полей
+        //удаление одного поля
         level = await Level.findOne({ where: { id } });
         filePath = path.join(filePath, level.level_address);
         if (fs.existsSync(filePath)) {
@@ -70,7 +72,6 @@ class LevelController {
       }
     }
     try {
-
       //удаление всех полей
       fs.readdir(filePath, (err, files) => {
         if (err) throw err;
