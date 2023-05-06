@@ -14,7 +14,7 @@ class LevelController {
       const level = await Level.findOne({
         where: { userId: userId },
       });
-      if (level?.level_address){
+      if (level.level_address){
         fs.unlinkSync(path.resolve(__dirname, "..", "static", level.level_address));
       }
       let fileName = uuid.v4() + ".json";
