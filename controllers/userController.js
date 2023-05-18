@@ -25,13 +25,18 @@ class UserController {
     const hashPassword = await bcrypt.hash(password, 5);
     const user = await User.create({ name: name, password: hashPassword });
     const level = await Level.create({ userId: user.id });
+    let levelId = level.id;
     const token = generateJwt(user.id, user.name);
-    return res.json({ token, user });
+    return res.json({ token, user, level: { id: levelId } });
   }
 
   async login(req, res, next) {
     const { name, password } = req.body;
-    const user = await User.findOne({ where: { name } });
+    const user = await User.findOne({
+      where: { name },
+      include: { model: Level, attributes: ["id"] },
+    });
+
     if (!user) {
       return next(ApiError.internal("Пользователь не найден!"));
     }
@@ -40,7 +45,11 @@ class UserController {
       return next(ApiError.internal("Указан неверный пароль!"));
     }
     const token = generateJwt(user.id, user.name);
-    return res.json({ token, user });
+    const [level, created] = await Level.findCreateFind({
+      where: { userId: user.id },
+    });
+    let levelId = level.id;
+    return res.json({ token, user});
   }
 
   async check(req, res, next) {
@@ -51,21 +60,20 @@ class UserController {
   async remove(req, res, next) {
     const { id } = req.body;
     let usersRemoved;
-    let levelDelReqAdress = 'http://'+req.headers.host+'/api/level/delete'
+    let levelDelReqAdress = "http://" + req.headers.host + "/api/level/delete";
     try {
       if (id) {
-        const user = await User.findOne({ where: { id: id } });
+        const user = await User.findByPk(id);
         const level = await Level.findOne({ where: { userId: id } });
         usersRemoved = user.destroy();
-        if (level)
-          axios.delete(levelDelReqAdress + "?" + toString(level.id));
+        if (level) axios.delete(levelDelReqAdress, { data: { id: level.id } });
         return res.json(usersRemoved);
       } else {
         usersRemoved = (await User.findAll()).length;
         await User.destroy({
           where: {},
         });
-        axios.delete(levelDelReqAdress)
+        axios.delete(levelDelReqAdress);
         return res.json(usersRemoved);
       }
     } catch (e) {
@@ -76,12 +84,35 @@ class UserController {
   async download(req, res, next) {
     let { id } = req.body;
     let user;
-    if (!id) {
-      user = await User.findAll();
+    try {
+      if (!id) {
+        user = await User.findAll({
+          include: [
+            {
+              model: Level,
+              attributes: ["id"],
+            },
+          ],
+        });
+
+        return res.json(user);
+      }
+
+      user = await User.findByPk(id, {
+        include: [
+          {
+            model: Level,
+            attributes: ["id"],
+          },
+        ],
+      });
+      if (!user) {
+        return next(ApiError.internal("Пользователь не найден!"));
+      }
       return res.json(user);
+    } catch (e) {
+      next(ApiError.badRequest(e.message));
     }
-    user = await Level.findOne({ where: { id: id } });
-    return res.json(user);
   }
 }
 

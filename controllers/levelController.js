@@ -5,22 +5,29 @@ const ApiError = require("../error/ApiError");
 const { log } = require("console");
 const { where } = require("sequelize");
 const fs = require("fs");
+const { Sequelize } = require("sequelize");
 
 class LevelController {
   async create(req, res, next) {
     try {
-      const {userId} = req.body;
-      const { level_address } = req.files;
-      const level = await Level.findOne({
+      const { userId } = req.body;
+      const { level_address } = req.body;
+      const [level, created] = await Level.findCreateFind({
         where: { userId: userId },
       });
-      if (level.level_address){
-        fs.unlinkSync(path.resolve(__dirname, "..", "static", level.level_address));
+      if (level.level_address) {
+        fs.unlinkSync(
+          path.resolve(__dirname, "..", "static", level.level_address)
+        );
       }
+
       let fileName = uuid.v4() + ".json";
-      level.setAttributes({level_address: fileName})
-      level_address.mv(path.resolve(__dirname, "..", "static", fileName));
-      level.save()
+      level.setAttributes({ level_address: fileName });
+
+      const filePath = path.resolve(__dirname, "..", "static", fileName);
+      fs.writeFileSync(filePath, level_address);
+
+      level.save();
       return res.json(level);
     } catch (e) {
       next(ApiError.badRequest(e.message));
@@ -34,13 +41,13 @@ class LevelController {
   }
 
   async download(req, res) {
-    let { id } = req.query;
+    let { id } = req.body;
     let level;
     if (!id) {
       level = await Level.findAll();
       return res.json(level);
     }
-    level = await Level.findOne({ where: { id: id } });
+    level = await Level.findByPk(id);
     let fileText = await fs.readFileSync(
       path.resolve(__dirname, "..", "static", level.level_address),
       { encoding: "utf8" }
@@ -49,7 +56,7 @@ class LevelController {
   }
 
   async delete(req, res) {
-    let { id } = req.query;
+    let { id } = req.body;
     let level;
     let levelsRemoved = 0;
     let filePath = path.resolve(__dirname, "..", "static");
@@ -92,6 +99,37 @@ class LevelController {
     } catch (e) {
       log(e);
       return res.json(levelsRemoved);
+    }
+  }
+
+  async random(req, res, next) {
+    const { userId } = req.body;
+    try {
+      const randomLevel = await Level.findOne({
+        // Подзапрос для выбора случайного пользовател��, различного от текущего
+        where: {
+          userId: {
+            [Sequelize.Op.not]: userId,
+          },
+        },
+        include: [
+          {
+            model: User,
+            attributes: {exclude: ['password', 'createdAt','updatedAt']},
+          },
+        ],
+        order: Sequelize.literal("rand()"),
+        limit: 1,
+        attributes: {exclude: ['createdAt','updatedAt']}
+      });
+      let fileText = await fs.readFileSync(
+        path.resolve(__dirname, "..", "static", randomLevel.level_address),
+        { encoding: "utf8" }
+      );
+      const result = {level: {id: randomLevel.id, level_content: fileText}, user: randomLevel.user}
+      return res.json(result)
+    } catch (e) {
+      next(ApiError.badRequest(e.message));
     }
   }
 }
