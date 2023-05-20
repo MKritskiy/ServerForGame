@@ -40,19 +40,26 @@ class LevelController {
     return res.json(level);
   }
 
-  async download(req, res) {
-    let { id } = req.body;
+  async download(req, res, next) {
+    let { id } = req.query;
     let level;
-    if (!id) {
-      level = await Level.findAll();
-      return res.json(level);
-    }
+    try {
+        if (!id) {
+            level = await Level.findAll();
+            return res.json(level);
+        }
     level = await Level.findByPk(id);
+    if (!level){
+        return next(ApiError.internal("Уровень не найден!"));
+    }
     let fileText = await fs.readFileSync(
       path.resolve(__dirname, "..", "static", level.level_address),
       { encoding: "utf8" }
     );
     return res.json(fileText);
+    } catch(e) {
+        next(ApiError.badRequest(e.message));
+    }
   }
 
   async delete(req, res) {

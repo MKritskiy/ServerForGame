@@ -58,7 +58,7 @@ class UserController {
   }
 
   async remove(req, res, next) {
-    const { id } = req.body;
+    const { id } = req.query;
     let usersRemoved;
     let levelDelReqAdress = "http://" + req.headers.host + "/api/level/delete";
     try {
@@ -82,7 +82,7 @@ class UserController {
   }
 
   async download(req, res, next) {
-    let { id } = req.body;
+    let { id } = req.query;
     let user;
     try {
       if (!id) {
