@@ -6,8 +6,20 @@ const { log } = require("console");
 const { where } = require("sequelize");
 const fs = require("fs");
 const { Sequelize } = require("sequelize");
-
+/**
+ * @class
+ */
 class LevelController {
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:18 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async create(req, res, next) {
     try {
       const { userId } = req.body;
@@ -34,12 +46,31 @@ class LevelController {
     }
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:18 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @returns {unknown}
+   */
   async update(req, res) {
     const { level_address } = req.body;
     const level = await Level.create({ level_address });
     return res.json(level);
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:18 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async download(req, res, next) {
     let { id } = req.query;
     let level;
@@ -62,6 +93,15 @@ class LevelController {
     }
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:18 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @returns {unknown}
+   */
   async delete(req, res) {
     let { id } = req.body;
     let level;
@@ -109,8 +149,18 @@ class LevelController {
     }
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:18 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async random(req, res, next) {
-    const { userId } = req.body;
+    const { userId } = req.query;
     try {
       const randomLevel = await Level.findOne({
         // Подзапрос для выбора случайного пользовател��, различного от текущего

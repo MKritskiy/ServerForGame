@@ -1,6 +1,12 @@
 const sequelize = require('../db')
 const {DataTypes} = require('sequelize')
 
+/**
+ * Description placeholder
+ * @date 5/24/2023 - 1:49:37 AM
+ *
+ * @type {*}
+ */
 const User = sequelize.define('user', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     name: {type: DataTypes.STRING},
@@ -10,6 +16,12 @@ const User = sequelize.define('user', {
     score: {type: DataTypes.INTEGER, defaultValue: 0}
 })
 
+/**
+ * Description placeholder
+ * @date 5/24/2023 - 1:49:37 AM
+ *
+ * @type {*}
+ */
 const Level = sequelize.define('level', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     level_address: {type: DataTypes.STRING}

@@ -4,11 +4,32 @@ const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const { User, Level } = require("../models/models");
 
+/**
+ * Description placeholder
+ * @date 5/24/2023 - 1:49:27 AM
+ *
+ * @param {*} id
+ * @param {*} name
+ * @returns {*}
+ */
 const generateJwt = (id, name) => {
   return jwt.sign({ id, name }, process.env.SECRET_KEY, { expiresIn: "24h" });
 };
 
+/**
+ * @class
+ */
 class UserController {
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:27 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async registration(req, res, next) {
     const { name, password } = req.body;
     if (!name || !password) {
@@ -30,6 +51,16 @@ class UserController {
     return res.json({ token, user, level: { id: levelId } });
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:27 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async login(req, res, next) {
     const { name, password } = req.body;
     const user = await User.findOne({
@@ -52,11 +83,31 @@ class UserController {
     return res.json({ token, user});
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:26 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async check(req, res, next) {
     const token = generateJwt(req.user.id, req.user.name);
     return res.json({ token });
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:26 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async remove(req, res, next) {
     const { id } = req.query;
     let usersRemoved;
@@ -81,6 +132,16 @@ class UserController {
     }
   }
 
+  /**
+   * Description placeholder
+   * @date 5/24/2023 - 1:49:26 AM
+   *
+   * @async
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   * @returns {unknown}
+   */
   async download(req, res, next) {
     let { id } = req.query;
     let user;
