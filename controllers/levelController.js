@@ -113,6 +113,7 @@ class LevelController {
         // Подзапрос для выбора случайного пользовател��, различного от текущего
         where: {
           userId: { [Op.ne]: userId },
+          level_address: { [Op.ne]: userId },
         },
         include: [
           {
@@ -125,7 +126,7 @@ class LevelController {
         attributes: {exclude: ['createdAt','updatedAt']}
       });
       if (!randomLevel || !randomLevel.user) {
-        return res.status(404).json({message: "Не удалось получить случайный уровень"});
+        return next(ApiError.internal("Уровня не существует не найден!"));
       }
       let fileText = await fs.readFileSync(
         path.resolve(__dirname, "..", "static", randomLevel.level_address),
