@@ -5,21 +5,9 @@ const ApiError = require("../error/ApiError");
 const { log } = require("console");
 const { where } = require("sequelize");
 const fs = require("fs");
-const { Sequelize } = require("sequelize");
-/**
- * @class
- */
+const { Sequelize, Op } = require("sequelize");
+
 class LevelController {
-  /**
-   * Description placeholder
-   * @date 5/24/2023 - 1:49:18 AM
-   *
-   * @async
-   * @param {*} req
-   * @param {*} res
-   * @param {*} next
-   * @returns {unknown}
-   */
   async create(req, res, next) {
     try {
       const { userId } = req.body;
@@ -27,18 +15,15 @@ class LevelController {
       const [level, created] = await Level.findCreateFind({
         where: { userId: userId },
       });
-      if (level.level_address) {
-        fs.unlinkSync(
-          path.resolve(__dirname, "..", "static", level.level_address)
-        );
+      let filePath;
+      if (!level.level_address) {
+        let fileName = uuid.v4() + ".json";
+        level.setAttributes({ level_address: fileName });
+        filePath = path.resolve(__dirname, "..", "static", fileName);
+      } else {
+         filePath = path.resolve(__dirname, "..", "static", level.level_address);
       }
-
-      let fileName = uuid.v4() + ".json";
-      level.setAttributes({ level_address: fileName });
-
-      const filePath = path.resolve(__dirname, "..", "static", fileName);
-      fs.writeFileSync(filePath, level_address);
-
+      fs.writeFileSync(filePath, level_address, {flag:"w"});
       level.save();
       return res.json(level);
     } catch (e) {
@@ -46,31 +31,12 @@ class LevelController {
     }
   }
 
-  /**
-   * Description placeholder
-   * @date 5/24/2023 - 1:49:18 AM
-   *
-   * @async
-   * @param {*} req
-   * @param {*} res
-   * @returns {unknown}
-   */
   async update(req, res) {
     const { level_address } = req.body;
     const level = await Level.create({ level_address });
     return res.json(level);
   }
 
-  /**
-   * Description placeholder
-   * @date 5/24/2023 - 1:49:18 AM
-   *
-   * @async
-   * @param {*} req
-   * @param {*} res
-   * @param {*} next
-   * @returns {unknown}
-   */
   async download(req, res, next) {
     let { id } = req.query;
     let level;
@@ -93,15 +59,6 @@ class LevelController {
     }
   }
 
-  /**
-   * Description placeholder
-   * @date 5/24/2023 - 1:49:18 AM
-   *
-   * @async
-   * @param {*} req
-   * @param {*} res
-   * @returns {unknown}
-   */
   async delete(req, res) {
     let { id } = req.body;
     let level;
@@ -149,25 +106,13 @@ class LevelController {
     }
   }
 
-  /**
-   * Description placeholder
-   * @date 5/24/2023 - 1:49:18 AM
-   *
-   * @async
-   * @param {*} req
-   * @param {*} res
-   * @param {*} next
-   * @returns {unknown}
-   */
   async random(req, res, next) {
     const { userId } = req.query;
     try {
       const randomLevel = await Level.findOne({
         // Подзапрос для выбора случайного пользовател��, различного от текущего
         where: {
-          userId: {
-            [Sequelize.Op.not]: userId,
-          },
+          userId: { [Op.ne]: userId },
         },
         include: [
           {
@@ -179,6 +124,9 @@ class LevelController {
         limit: 1,
         attributes: {exclude: ['createdAt','updatedAt']}
       });
+      if (!randomLevel || !randomLevel.user) {
+        return res.status(404).json({message: "Не удалось получить случайный уровень"});
+      }
       let fileText = await fs.readFileSync(
         path.resolve(__dirname, "..", "static", randomLevel.level_address),
         { encoding: "utf8" }
