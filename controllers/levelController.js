@@ -5,7 +5,7 @@ const ApiError = require("../error/ApiError");
 const { log } = require("console");
 const { where } = require("sequelize");
 const fs = require("fs");
-const { Sequelize } = require("sequelize");
+const { Sequelize, Op } = require("sequelize");
 
 class LevelController {
   async create(req, res, next) {
@@ -112,9 +112,7 @@ class LevelController {
       const randomLevel = await Level.findOne({
         // Подзапрос для выбора случайного пользовател��, различного от текущего
         where: {
-          userId: {
-            [Sequelize.Op.not]: userId,
-          },
+          userId: { [Op.ne]: userId },
         },
         include: [
           {
@@ -126,6 +124,9 @@ class LevelController {
         limit: 1,
         attributes: {exclude: ['createdAt','updatedAt']}
       });
+      if (!randomLevel || !randomLevel.user) {
+        return res.status(404).json({message: "Не удалось получить случайный уровень"});
+      }
       let fileText = await fs.readFileSync(
         path.resolve(__dirname, "..", "static", randomLevel.level_address),
         { encoding: "utf8" }
