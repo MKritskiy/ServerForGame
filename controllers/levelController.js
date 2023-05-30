@@ -15,18 +15,15 @@ class LevelController {
       const [level, created] = await Level.findCreateFind({
         where: { userId: userId },
       });
-      if (level.level_address) {
-        fs.unlinkSync(
-          path.resolve(__dirname, "..", "static", level.level_address)
-        );
+      let filePath;
+      if (!level.level_address) {
+        let fileName = uuid.v4() + ".json";
+        level.setAttributes({ level_address: fileName });
+        filePath = path.resolve(__dirname, "..", "static", fileName);
+      } else {
+         filePath = path.resolve(__dirname, "..", "static", level.level_address);
       }
-
-      let fileName = uuid.v4() + ".json";
-      level.setAttributes({ level_address: fileName });
-
-      const filePath = path.resolve(__dirname, "..", "static", fileName);
-      fs.writeFileSync(filePath, level_address);
-
+      fs.writeFileSync(filePath, level_address, {flag:"w"});
       level.save();
       return res.json(level);
     } catch (e) {
@@ -110,7 +107,7 @@ class LevelController {
   }
 
   async random(req, res, next) {
-    const { userId } = req.body;
+    const { userId } = req.query;
     try {
       const randomLevel = await Level.findOne({
         // Подзапрос для выбора случайного пользовател��, различного от текущего
